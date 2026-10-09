@@ -1,0 +1,66 @@
+
+version: "3.8"
+
+services:
+  host_monitor-victoria-metrics:
+    image: victoriametrics/victoria-metrics:latest
+    container_name: host_monitor-victoria-metrics
+    # host 网络：直接占用宿主机端口，categraf 用宿主机IP 192.168.1.26:8428 推送
+    network_mode: host
+    restart: always
+    volumes:
+      - ./victoriametrics/vmdata:/victoria-metrics-data
+    # 数据路径必须指向挂载点，才能真正落到 ./victoriametrics/vmdata
+    command:
+      - "-storageDataPath=/victoria-metrics-data"
+      - "-retentionPeriod=30d"
+
+  host_monitor-categraf:
+    image: flashcatcloud/categraf:latest
+    container_name: host_monitor-categraf
+    network_mode: host
+    restart: always
+    hostname: categraf          # 指标里的 agent_hostname=categraf
+    environment:
+      - TZ=Asia/Shanghai
+    volumes:
+      - ./categraf/conf/:/etc/categraf/conf
+      - ./categraf/mibs/:/opt/categraf/mibs
+    # 镜像默认入口是 /entrypoint.sh，必须改为二进制并显式指定 configs
+    entrypoint: /usr/bin/categraf
+    command: ["--configs", "/etc/categraf/conf"]
+
+  host_monitor-influxdb2:
+    image: influxdb:latest
+    container_name: host_monitor-influxdb2
+    ports:
+      - "8086:8086"
+    restart: always
+    environment:
+      - TZ=Asia/Shanghai
+      # InfluxDB2 自动初始化配置，首次启动自动创建组织、用户、bucket
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=admin
+      - DOCKER_INFLUXDB_INIT_PASSWORD=PWD
+      - DOCKER_INFLUXDB_INIT_ORG=host_monitor_org
+      - DOCKER_INFLUXDB_INIT_BUCKET=idrac_bucket
+      - DOCKER_INFLUXDB_INIT_RETENTION=30d
+      # 可选：手动指定admin token，方便telegraf/categraf写入
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=ETC3aY_guFqiUOboAYkcnbt9LaGY8_MYnmBjsJMMDSL8afrs6pR3sklkTa1BfL3lMYt4uIwM3J8OedHnhyJbwQ==
+    volumes:
+      - ./influxdb2/data:/var/lib/influxdb2:rw
+      - ./influxdb2/config:/etc/influxdb2:rw
+
+  host_monitor-telegraf:
+    image: telegraf:latest
+    container_name: host_monitor-telegraf
+    ports:
+      - "8092:8092/udp"
+      - "8094:8094/tcp"
+      - "8125:8125/udp"
+    restart: always
+    environment:
+      - TZ=Asia/Shanghai
+    volumes:
+      - ./telegraf/telegraf.conf:/etc/telegraf/telegraf.conf:ro
+      - ./telegraf/telegraf.d:/etc/telegraf/telegraf.d:rw

@@ -1,0 +1,51 @@
+[global]
+print_configs = false
+hostname = ""
+omit_hostname = false
+interval = 10
+providers = ["local"]
+concurrency = -1
+
+[global.labels]
+# region = "guangzhou"
+
+[log]
+file_name = "stdout"
+max_size = 100
+max_age = 1
+max_backups = 1
+local_time = true
+compress = false
+
+[writer_opt]
+batch = 1000
+chan_size = 1000000
+
+# ===== 关键：VictoriaMetrics 接入 =====
+[[writers]]
+url = "http://192.168.3.2:8428/api/v1/write"   # ← 改这里
+timeout = 5000
+dial_timeout = 2500
+max_idle_conns_per_host = 100
+
+[http]
+enable = false
+address = ":9100"
+print_access = false
+run_mode = "release"
+
+[ibex]
+enable = false
+servers = ["127.0.0.1:20090"]
+
+[heartbeat]
+enable = false          # 不用夜莺就关掉
+url = "http://127.0.0.1:17000/v1/n9e/heartbeat"
+interval = 10
+timeout = 5000
+dial_timeout = 2500
+max_idle_conns_per_host = 100
+
+[prometheus]
+enable = false
+log_level = "info"
