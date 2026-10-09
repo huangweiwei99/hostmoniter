@@ -1,0 +1,12 @@
+# macOS
+.DS_Store
+
+# VictoriaMetrics 运行时数据
+victoriametrics/vmdata/
+
+# InfluxDB2 运行时数据与配置卷
+influxdb2/data/
+influxdb2/config/
+
+# 日志
+*.log
