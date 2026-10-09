@@ -26,9 +26,9 @@ Dell iDRAC (SNMP) ─▶│ categraf  ──────────────
 
 ## 组件
 
-| 服务                              | 镜像                                        | 作用                                              | 数据/配置目录                                        |
-| --------------------------------- | ------------------------------------------- | ------------------------------------------------- | ---------------------------------------------------- |
-| `host_monitor-victoria-metrics` | `victoriametrics/victoria-metrics:latest` | 时序数据库，`host` 网络，保留 30 天             | `victoriametrics/vmdata/`                          |
+| 服务                            | 镜像                                      | 作用                                              | 数据/配置目录                                    |
+| ------------------------------- | ----------------------------------------- | ------------------------------------------------- | ------------------------------------------------ |
+| `host_monitor-victoria-metrics` | `victoriametrics/victoria-metrics:latest` | 时序数据库，`host` 网络，保留 30 天               | `victoriametrics/vmdata/`                        |
 | `host_monitor-categraf`         | `flashcatcloud/categraf:latest`           | 采集 Dell iDRAC SNMP 指标并推送 VM                | `categraf/conf/`, `categraf/mibs/`               |
 | `host_monitor-influxdb2`        | `influxdb:latest`                         | InfluxDB2，自动初始化组织/用户/bucket，保留 30 天 | `influxdb2/data/`, `influxdb2/config/`           |
 | `host_monitor-telegraf`         | `telegraf:latest`                         | 采集 Dell iDRAC SNMP 指标并推送 InfluxDB2         | `telegraf/telegraf.conf`, `telegraf/telegraf.d/` |
@@ -80,11 +80,11 @@ docker compose logs -f host_monitor-telegraf
 
 所有指标写入目标集中在以下位置，按实际环境修改：
 
-| 文件                          | 项                               | 默认值                                   | 说明                                 |
-| ----------------------------- | -------------------------------- | ---------------------------------------- | ------------------------------------ |
+| 文件                        | 项                             | 默认值                                 | 说明                                |
+| --------------------------- | ------------------------------ | -------------------------------------- | ----------------------------------- |
 | `categraf/conf/config.toml` | `[[writers]].url`              | `http://192.168.3.2:8428/api/v1/write` | categraf → VictoriaMetrics 写入地址 |
 | `telegraf/telegraf.conf`    | `[[outputs.influxdb_v2]].urls` | `http://192.168.3.2:8086`              | telegraf → InfluxDB2 写入地址       |
-| `docker-compose.yaml`       | 端口映射 /`network_mode`       | `8428`、`8086`、`8092/8094/8125`   | 对外暴露端口                         |
+| `docker-compose.yaml`       | 端口映射 /`network_mode`       | `8428`、`8086`、`8092/8094/8125`       | 对外暴露端口                        |
 
 ### 2. 被监控的 iDRAC 主机（SNMP agents）
 
@@ -107,6 +107,16 @@ docker compose logs -f host_monitor-telegraf
 ### 3. MIB 文件
 
 categraf 依赖 `/opt/categraf/mibs/dell` 目录下的 Dell MIB 做 OID → 名称翻译（`translator = "gosmi"`），仓库已内置常见 DELL-RAC / iDRAC MIB。
+
+### Grafana 面板
+
+iDRAC - Host Stats
+ID:12106
+InfluxDB 数据源:http://192.168.3.2:8086
+
+Dell iDRAC SNMP Dashboard for VectoriaMetrics
+ID:21107
+Prometheus 数据源:http://192.168.3.2:8428
 
 ## 采集指标概览
 
